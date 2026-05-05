@@ -62,7 +62,7 @@ const VoiceTutor: React.FC = () => {
 
     try {
       const apiUrl = import.meta.env.DEV 
-        ? 'http://localhost:8000/chat' 
+        ? 'http://127.0.0.1:8000/chat' 
         : '/_/backend/chat';
         
       const { data } = await axios.post(apiUrl, { message });
@@ -71,6 +71,7 @@ const VoiceTutor: React.FC = () => {
     } catch (error) {
       const errorMsg = "Connection error. Please check your backend.";
       setHistory(prev => [...prev, { role: 'assistant', text: errorMsg }]);
+      setStatus('idle');
       speak(errorMsg);
     }
   };

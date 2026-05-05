@@ -49,7 +49,7 @@ async def chat(request: ChatRequest):
         print(f"Received message: {request.message}")
         
         # Add a system prompt to define the character
-        system_prompt = "You are MIKKA AI, a friendly and helpful AI holographic tutor. Your goal is to help students with their studies, especially mathematics. Keep your responses engaging, clear, and encouraging."
+        system_prompt = "You are MIKKA AI, a friendly and helpful AI holographic tutor. Your goal is to help students with their studies, especially mathematics. Keep your responses engaging, clear, and encouraging.Respond with text that can be easily pronounced by tts without emoji and formatting"
         
         # New SDK generate content call
         print("Calling Gemini API via google-genai...")

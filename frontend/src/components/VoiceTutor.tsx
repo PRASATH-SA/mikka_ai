@@ -61,7 +61,11 @@ const VoiceTutor: React.FC = () => {
     setStatus('thinking');
 
     try {
-      const { data } = await axios.post('http://localhost:8000/chat', { message });
+      const apiUrl = import.meta.env.DEV 
+        ? 'http://localhost:8000/chat' 
+        : '/_/backend/chat';
+        
+      const { data } = await axios.post(apiUrl, { message });
       setHistory(prev => [...prev, { role: 'assistant', text: data.response }]);
       speak(data.response);
     } catch (error) {

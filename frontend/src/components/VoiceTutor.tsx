@@ -8,45 +8,34 @@ interface Message {
   text: string;
 }
 
+// Type definitions for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onend: () => void;
+  onerror: (event: any) => void;
+  start: () => void;
+  stop: () => void;
+}
+
 const VoiceTutor: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const [transcript, setTranscript] = useState('');
   const [history, setHistory] = useState<Message[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, transcript]);
-
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
-
-      recognitionRef.current.onresult = (event: any) => {
-        const result = event.results[event.resultIndex][0].transcript;
-        setTranscript(result);
-        if (event.results[event.resultIndex].isFinal) {
-          handleUserMessage(result);
-        }
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        if (status === 'listening') setStatus('idle');
-      };
-
-      recognitionRef.current.onerror = () => {
-        setIsListening(false);
-        setStatus('idle');
-      };
-    }
-  }, [status]);
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -68,13 +57,45 @@ const VoiceTutor: React.FC = () => {
       const { data } = await axios.post(apiUrl, { message });
       setHistory(prev => [...prev, { role: 'assistant', text: data.response }]);
       speak(data.response);
-    } catch (error) {
+    } catch (err) {
+      console.error('Chat error:', err);
       const errorMsg = "Connection error. Please check your backend.";
       setHistory(prev => [...prev, { role: 'assistant', text: errorMsg }]);
       setStatus('idle');
       speak(errorMsg);
     }
   };
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      if (recognitionRef.current) {
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+          const result = event.results[event.resultIndex][0].transcript;
+          setTranscript(result);
+          if (event.results[event.resultIndex].isFinal) {
+            handleUserMessage(result);
+          }
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+          if (status === 'listening') setStatus('idle');
+        };
+
+        recognitionRef.current.onerror = () => {
+          setIsListening(false);
+          setStatus('idle');
+        };
+      }
+    }
+  }, [status]);
+
 
   const toggleListening = () => {
     if (isListening) {
